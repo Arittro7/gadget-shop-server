@@ -15,6 +15,33 @@ app.use(
 );
 app.use(express.json())
 
+// token Verification middleware
+const verifyJWT = (req,res,next) =>{
+  const authorization = req.header.authorization;
+  if(!authorization){
+    return res.send({message: "Unauthorized User"})
+  }
+  const token = authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_KEY_TOKEN,(err,decoded)=>{
+    if(err){
+      return res.send({message: "Invalid Token"})
+    }
+    req.decoded = decoded;
+    next()
+  })
+}
+
+// verify seller
+const verifySeller = async(req, res, next)=>{
+  const email = req.decoded.email;
+  const query = { email: email};
+  const user = await userCollection.findOne(query)
+  if (user?.role !== "seller"){
+    return res.send({message: "Forbidden Access"})
+  }
+  next()
+}
+
 // mongodb
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wv413.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
@@ -26,6 +53,9 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+const userCollection = client.db("gadgetShop").collection("users")
+const productCollection = client.db("gadgetShop").collection("products")
 
 const dbConnect = async () => {
   try {
@@ -51,13 +81,19 @@ const dbConnect = async () => {
       res.send(result)
     })
 
+    // add product 🔰
+    app.post("/addProduct", verifyJWT, verifySeller, async (req, res) =>{
+      const product = req.body;
+      const result = await productCollection.insertOne(product)
+      res.send(result)
+    })
+
   } catch (error) {
     console.log(error.name, error.message);
   }
 }
 
-const userCollection = client.db("gadgetShop").collection("users")
-const productCollection = client.db("gadgetShop").collection("products")
+
 
 dbConnect()
 // api
