@@ -7,7 +7,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
-app.use(cors())
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    optionsSuccessStatus: 200,
+  })
+);
 app.use(express.json())
 
 // mongodb
