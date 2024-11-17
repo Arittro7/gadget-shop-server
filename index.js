@@ -27,6 +27,13 @@ const dbConnect = async () => {
     client.connect();
     console.log('GadgetShop Database connect successfully');
 
+    // get user
+    app.get('/user/:email', async (req, res)=>{
+      const query = { email: req.params.email }
+      const user = await userCollection.findOne(query)
+      res.send(user)
+    })
+
     // insert user
     app.post("/users", async (req, res)=>{
       const user = req.body;
